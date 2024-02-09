@@ -63,6 +63,7 @@ const CounterProvider: React.FC = ({ children }) => {
 
   const setTimerDuration = useCallback((time: number) => {
     setDuration(time * 60);
+
     setCount(time * 60);
   }, []);
 
