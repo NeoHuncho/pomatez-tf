@@ -8,7 +8,7 @@ import {
   setRound,
   setTimerType,
   skipTimer,
-  toggleNotificationSound,
+  toggleNotificationSounds,
 } from "store";
 import { TimerStatus } from "store/timer/types";
 import {
@@ -77,7 +77,7 @@ const Control: React.FC<Props> = ({ resetTimerAction }) => {
   ]);
 
   const onNotifacationSoundCallback = useCallback(() => {
-    dispatch(toggleNotificationSound());
+    dispatch(toggleNotificationSounds());
   }, [dispatch]);
 
   const onToggleCompactCallback = useCallback(() => {

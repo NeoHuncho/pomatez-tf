@@ -15,11 +15,11 @@ import thirtySecondsLeftAssistanceWav from "assets/audios/voiceAssistance/thirty
 import { useAppDispatch, useAppSelector } from "hooks/storeHooks";
 import { TimerStatus } from "store/timer/types";
 
-import focusFinishedMp3 from "assets/audios/focus-finished.mp3";
-import longBreakFinishedMp3 from "assets/audios/long-break-finished.mp3";
-import sessionFinishedMp3 from "assets/audios/session-finished.mp3";
-import shortBreakFinishedMp3 from "assets/audios/short-break-finished.mp3";
-import sixtySecondsLeftBreakMp3 from "assets/audios/sixty-seconds-left-break.mp3";
+// import focusFinishedMp3 from "assets/audios/focus-finished.mp3";
+// import longBreakFinishedMp3 from "assets/audios/long-break-finished.mp3";
+// import sessionFinishedMp3 from "assets/audios/session-finished.mp3";
+// import shortBreakFinishedMp3 from "assets/audios/short-break-finished.mp3";
+// import sixtySecondsLeftBreakMp3 from "assets/audios/sixty-seconds-left-break.mp3";
 import threeMinsLeftFocusMp3 from "assets/audios/three-mins-left-focus.mp3";
 
 type CounterProps = {
@@ -51,6 +51,7 @@ const CounterProvider: React.FC = ({ children }) => {
     {
       icon: notificationIcon,
       mute: !settings.notificationSoundOn,
+      notificationSounds: settings.notificationSounds,
     },
     settings.notificationType !== "none"
   );
@@ -114,72 +115,30 @@ const CounterProvider: React.FC = ({ children }) => {
           padNum(date.getHours()) + ":" + padNum(date.getMinutes());
 
         if (timer.timerType !== TimerStatus.SPECIAL_BREAK) {
-          if (firstBreak && currentTime === firstBreak.fromTime) {
-            dispatch(setTimerType(TimerStatus.SPECIAL_BREAK));
-            setTimerDuration(firstBreak.duration);
-            notification(
-              "Special break started.",
-              {
-                body: `Enjoy your ${firstBreak.duration} ${
-                  isEqualToOne(firstBreak.duration)
-                    ? "minute"
-                    : "minutes"
-                } special break.`,
-              },
-              specialBreakStartedAssistanceWav
-            );
-            return;
-          }
+          const breaks = [
+            firstBreak,
+            secondBreak,
+            thirdBreak,
+            fourthBreak,
+          ];
 
-          if (secondBreak && currentTime === secondBreak.fromTime) {
-            dispatch(setTimerType(TimerStatus.SPECIAL_BREAK));
-            setTimerDuration(secondBreak.duration);
-            notification(
-              "Special break started.",
-              {
-                body: `Enjoy your ${secondBreak.duration} ${
-                  isEqualToOne(secondBreak.duration)
-                    ? "minute"
-                    : "minutes"
-                } special break.`,
-              },
-              specialBreakStartedAssistanceWav
-            );
-            return;
-          }
-
-          if (thirdBreak && currentTime === thirdBreak.fromTime) {
-            dispatch(setTimerType(TimerStatus.SPECIAL_BREAK));
-            setTimerDuration(thirdBreak.duration);
-            notification(
-              "Special break started.",
-              {
-                body: `Enjoy your ${thirdBreak.duration} ${
-                  isEqualToOne(thirdBreak.duration)
-                    ? "minute"
-                    : "minutes"
-                } special break.`,
-              },
-              specialBreakStartedAssistanceWav
-            );
-            return;
-          }
-
-          if (fourthBreak && currentTime === fourthBreak.fromTime) {
-            dispatch(setTimerType(TimerStatus.SPECIAL_BREAK));
-            setTimerDuration(fourthBreak.duration);
-            notification(
-              "Special break started.",
-              {
-                body: `Enjoy your ${fourthBreak.duration} ${
-                  isEqualToOne(fourthBreak.duration)
-                    ? "minute"
-                    : "minutes"
-                } special break.`,
-              },
-              specialBreakStartedAssistanceWav
-            );
-            return;
+          for (const breakTime of breaks) {
+            if (breakTime && currentTime === breakTime.fromTime) {
+              dispatch(setTimerType(TimerStatus.SPECIAL_BREAK));
+              setTimerDuration(breakTime.duration);
+              notification(
+                "Special break started.",
+                {
+                  body: `Enjoy your ${breakTime.duration} ${
+                    isEqualToOne(breakTime.duration)
+                      ? "minute"
+                      : "minutes"
+                  } special break.`,
+                },
+                specialBreakStartedAssistanceWav
+              );
+              return;
+            }
           }
         } else {
           return clearInterval(interval);
@@ -233,32 +192,47 @@ const CounterProvider: React.FC = ({ children }) => {
   }, [timer.playing]);
 
   useEffect(() => {
+    const timerMessages = {
+      [TimerStatus.SHORT_BREAK]:
+        "Prepare yourself to stay focused again.",
+      [TimerStatus.LONG_BREAK]:
+        "Prepare yourself to stay focused again.",
+      [TimerStatus.SPECIAL_BREAK]:
+        "Prepare yourself to stay focused again.",
+      [TimerStatus.STAY_FOCUS]:
+        "Pause all media playing if there's one.",
+    };
+
+    const timerEndMessages = {
+      [TimerStatus.STAY_FOCUS]: {
+        message: "Focus time finished.",
+        nextType: TimerStatus.SHORT_BREAK,
+        sound: focusFinishedAssistanceWav,
+      },
+      [TimerStatus.SHORT_BREAK]: {
+        message: "Break time finished.",
+        nextType: TimerStatus.STAY_FOCUS,
+        sound: breakFinishedAssistanceWav,
+      },
+      [TimerStatus.LONG_BREAK]: {
+        message: "Break time finished.",
+        nextType: TimerStatus.STAY_FOCUS,
+        sound: breakFinishedAssistanceWav,
+      },
+      [TimerStatus.SPECIAL_BREAK]: {
+        message: "Break time finished.",
+        nextType: TimerStatus.STAY_FOCUS,
+        sound: sessionCompletedAssistanceWav,
+      },
+    };
     if (settings.notificationType === "extra") {
       if (count === 61) {
-        if (timer.timerType === TimerStatus.SHORT_BREAK) {
-          notification(
-            "60 seconds left.",
-            { body: "Prepare yourself to stay focused again." },
-            settings.enableVoiceAssistance
-              ? sixtySecondsLeftAssistanceWav
-              : sixtySecondsLeftBreakMp3
-          );
-        } else if (timer.timerType === TimerStatus.LONG_BREAK) {
-          notification(
-            "60 seconds left.",
-            { body: "Prepare yourself to stay focused again." },
-            settings.enableVoiceAssistance
-              ? sixtySecondsLeftAssistanceWav
-              : sixtySecondsLeftBreakMp3
-          );
-        } else if (timer.timerType === TimerStatus.SPECIAL_BREAK) {
-          notification(
-            "60 seconds left.",
-            { body: "Prepare yourself to stay focused again." },
-            settings.enableVoiceAssistance &&
-              sixtySecondsLeftAssistanceWav
-          );
-        }
+        notification(
+          "60 seconds left.",
+          { body: timerMessages[timer.timerType] },
+          settings.enableVoiceAssistance &&
+            sixtySecondsLeftAssistanceWav
+        );
       } else if (
         count === 60 &&
         timer.timerType === TimerStatus.STAY_FOCUS
@@ -274,119 +248,36 @@ const CounterProvider: React.FC = ({ children }) => {
     }
 
     if (count === 0) {
-      switch (timer.timerType) {
-        case TimerStatus.STAY_FOCUS:
-          if (timer.round < config.sessionRounds) {
-            setTimeout(() => {
-              notification(
-                "Focus time finished.",
-                {
-                  body: `Enjoy your ${config.shortBreak} ${
-                    isEqualToOne(config.shortBreak)
-                      ? "minute"
-                      : "minutes"
-                  } short break.`,
-                },
-                settings.enableVoiceAssistance
-                  ? focusFinishedAssistanceWav
-                  : focusFinishedMp3
-              );
+      const timerEndMessage = timerEndMessages[timer.timerType];
+      if (timerEndMessage) {
+        setTimeout(() => {
+          notification(
+            timerEndMessage.message,
+            {
+              body: `Enjoy your ${config[timerEndMessage.nextType]} ${
+                isEqualToOne(config[timerEndMessage.nextType])
+                  ? "minute"
+                  : "minutes"
+              } ${timerEndMessage.nextType.replace("_", " ")}.`,
+            },
+            settings.enableVoiceAssistance && timerEndMessage.sound
+          );
 
-              dispatch(setTimerType(TimerStatus.SHORT_BREAK));
-            }, 1000);
-          } else {
-            setTimeout(() => {
-              notification(
-                "Session rounds completed.",
-                {
-                  body: `Enjoy your ${config.longBreak} ${
-                    isEqualToOne(config.longBreak)
-                      ? "minute"
-                      : "minutes"
-                  } long break.`,
-                },
-                settings.enableVoiceAssistance
-                  ? sessionCompletedAssistanceWav
-                  : sessionFinishedMp3
-              );
+          dispatch(setTimerType(timerEndMessage.nextType));
 
-              dispatch(setTimerType(TimerStatus.LONG_BREAK));
-            }, 1000);
+          if (timerEndMessage.nextType === TimerStatus.STAY_FOCUS) {
+            dispatch(
+              setRound(
+                timer.timerType === TimerStatus.SHORT_BREAK
+                  ? timer.round + 1
+                  : 1
+              )
+            );
+            if (!settings.autoStartWorkTime) {
+              dispatch(setPlay(false));
+            }
           }
-          break;
-
-        case TimerStatus.SHORT_BREAK:
-          setTimeout(() => {
-            notification(
-              "Break time finished.",
-              {
-                body: `Stay focused as much as possible for ${
-                  config.stayFocus
-                } ${
-                  isEqualToOne(config.stayFocus) ? "minute" : "minutes"
-                }.`,
-              },
-              settings.enableVoiceAssistance
-                ? breakFinishedAssistanceWav
-                : shortBreakFinishedMp3
-            );
-
-            dispatch(setTimerType(TimerStatus.STAY_FOCUS));
-            dispatch(setRound(timer.round + 1));
-
-            if (!settings.autoStartWorkTime) {
-              dispatch(setPlay(false));
-            }
-          }, 1000);
-          break;
-
-        case TimerStatus.LONG_BREAK:
-          setTimeout(() => {
-            notification(
-              "Break time finished.",
-              {
-                body: `Stay focused as much as possible for ${
-                  config.stayFocus
-                } ${
-                  isEqualToOne(config.stayFocus) ? "minute" : "minutes"
-                }.`,
-              },
-              settings.enableVoiceAssistance
-                ? breakFinishedAssistanceWav
-                : longBreakFinishedMp3
-            );
-
-            dispatch(setTimerType(TimerStatus.STAY_FOCUS));
-            dispatch(setRound(1));
-
-            if (!settings.autoStartWorkTime) {
-              dispatch(setPlay(false));
-            }
-          }, 1000);
-          break;
-
-        case TimerStatus.SPECIAL_BREAK:
-          setTimeout(() => {
-            notification(
-              "Break time finished.",
-              {
-                body: `Stay focused as much as possible for ${
-                  config.stayFocus
-                } ${
-                  isEqualToOne(config.stayFocus) ? "minute" : "minutes"
-                }.`,
-              },
-              settings.enableVoiceAssistance &&
-                breakFinishedAssistanceWav
-            );
-
-            dispatch(setTimerType(TimerStatus.STAY_FOCUS));
-
-            if (!settings.autoStartWorkTime) {
-              dispatch(setPlay(false));
-            }
-          }, 1000);
-          break;
+        }, 1000);
       }
     }
   }, [
@@ -403,6 +294,7 @@ const CounterProvider: React.FC = ({ children }) => {
     settings.notificationType,
     settings.autoStartWorkTime,
     settings.enableVoiceAssistance,
+    config,
   ]);
 
   useEffect(() => {
