@@ -12,15 +12,15 @@ import sessionCompletedAssistanceWav from "assets/audios/voiceAssistance/session
 import sixtySecondsLeftAssistanceWav from "assets/audios/voiceAssistance/sixty-seconds-left.wav";
 import specialBreakStartedAssistanceWav from "assets/audios/voiceAssistance/special-break-started.wav";
 import thirtySecondsLeftAssistanceWav from "assets/audios/voiceAssistance/thirty-seconds-left.wav";
+
 import { useAppDispatch, useAppSelector } from "hooks/storeHooks";
 import { TimerStatus } from "store/timer/types";
 
-// import focusFinishedMp3 from "assets/audios/focus-finished.mp3";
-// import longBreakFinishedMp3 from "assets/audios/long-break-finished.mp3";
-// import sessionFinishedMp3 from "assets/audios/session-finished.mp3";
-// import shortBreakFinishedMp3 from "assets/audios/short-break-finished.mp3";
-// import sixtySecondsLeftBreakMp3 from "assets/audios/sixty-seconds-left-break.mp3";
-import threeMinsLeftFocusMp3 from "assets/audios/three-mins-left-focus.mp3";
+import focusFinishedMp3 from "assets/audios/focus-finished.mp3";
+import longBreakFinishedMp3 from "assets/audios/long-break-finished.mp3";
+import sessionFinishedMp3 from "assets/audios/session-finished.mp3";
+import shortBreakFinishedMp3 from "assets/audios/short-break-finished.mp3";
+import sixtySecondsLeftBreakMp3 from "assets/audios/sixty-seconds-left-break.mp3";
 
 type CounterProps = {
   count: number;
@@ -64,7 +64,6 @@ const CounterProvider: React.FC = ({ children }) => {
 
   const setTimerDuration = useCallback((time: number) => {
     setDuration(time * 60);
-
     setCount(time * 60);
   }, []);
 
@@ -207,44 +206,50 @@ const CounterProvider: React.FC = ({ children }) => {
       [TimerStatus.STAY_FOCUS]: {
         message: "Focus time finished.",
         nextType: TimerStatus.SHORT_BREAK,
-        sound: focusFinishedAssistanceWav,
+        sound: settings.enableVoiceAssistance
+          ? focusFinishedAssistanceWav
+          : focusFinishedMp3,
       },
       [TimerStatus.SHORT_BREAK]: {
         message: "Break time finished.",
         nextType: TimerStatus.STAY_FOCUS,
-        sound: breakFinishedAssistanceWav,
+        sound: settings.enableVoiceAssistance
+          ? breakFinishedAssistanceWav
+          : shortBreakFinishedMp3,
       },
       [TimerStatus.LONG_BREAK]: {
         message: "Break time finished.",
         nextType: TimerStatus.STAY_FOCUS,
-        sound: breakFinishedAssistanceWav,
+        sound: settings.enableVoiceAssistance
+          ? breakFinishedAssistanceWav
+          : longBreakFinishedMp3,
       },
       [TimerStatus.SPECIAL_BREAK]: {
         message: "Break time finished.",
         nextType: TimerStatus.STAY_FOCUS,
-        sound: sessionCompletedAssistanceWav,
+        sound: settings.enableVoiceAssistance
+          ? sessionCompletedAssistanceWav
+          : sessionFinishedMp3,
       },
     };
-    if (settings.notificationType === "extra") {
-      if (count === 61) {
-        notification(
-          "60 seconds left.",
-          { body: timerMessages[timer.timerType] },
-          settings.enableVoiceAssistance &&
-            sixtySecondsLeftAssistanceWav
-        );
-      } else if (
-        count === 60 &&
-        timer.timerType === TimerStatus.STAY_FOCUS
-      ) {
-        notification(
-          "60 seconds left.",
-          { body: "Pause all media playing if there's one." },
-          settings.enableVoiceAssistance
-            ? thirtySecondsLeftAssistanceWav
-            : threeMinsLeftFocusMp3
-        );
-      }
+
+    if (count === 31) {
+      notification(
+        "30 seconds left.",
+        { body: timerMessages[timer.timerType] },
+        settings.enableVoiceAssistance && thirtySecondsLeftAssistanceWav
+      );
+    } else if (
+      count === 60 &&
+      timer.timerType === TimerStatus.STAY_FOCUS
+    ) {
+      notification(
+        "60 seconds left.",
+        { body: "Pause all media playing if there's one." },
+        settings.enableVoiceAssistance
+          ? sixtySecondsLeftAssistanceWav
+          : sixtySecondsLeftBreakMp3
+      );
     }
 
     if (count === 0) {
